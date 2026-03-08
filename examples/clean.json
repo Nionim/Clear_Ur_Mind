@@ -1,0 +1,15 @@
+{
+	"n": "Project~Violette | Chat",
+	"ty": "private_supergroup",
+	"i": 2309029254,
+	"fmt": ["d","f","t"],
+	"u": [
+        [1, "Name1"],
+        [2, "Name2"],
+        [3, "Name3"]
+    ],
+    "ms": [
+        [1772936301, 1, "some text from user '1'"],
+        [1772936303, 3, "some text from user '3'"]
+    ]
+}

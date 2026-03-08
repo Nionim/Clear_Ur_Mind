@@ -19,4 +19,4 @@ platform_name = platform.__name__
 compress_message_seconds = 240
 compress_messages = True
 format_messages = True
-inline_json = False
+inline_json = True

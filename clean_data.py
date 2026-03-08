@@ -36,21 +36,47 @@ def remove_empty_messages(data):
     filtered_messages = []
     for message in data['messages']:
         keep = False
+        
         if 'text' in message:
             text = message['text']
-            if isinstance(text, str) and text.strip(): keep = True
+            if isinstance(text, str) and text.strip():
+                keep = True
             elif isinstance(text, list):
                 for item in text:
                     if isinstance(item, str) and item.strip():
                         keep = True
                         break
         
-        if not keep and 'media_type' in message: keep = True
+        if not keep and 'media_type' in message:
+            keep = True
+            
+        if not keep and isinstance(message, dict):
+            other_fields = [k for k in message.keys() 
+                          if k not in ['date_unixtime', 'from', 'id', 'type']]
+            if other_fields:
+                keep = True
+        
         if keep:
             filtered_messages.append(message)
     
     data['messages'] = filtered_messages
     return data
+
+def normalize_text(text):
+    if isinstance(text, str):
+        return text
+
+    if isinstance(text, list):
+        parts = []
+        for item in text:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                if 'text' in item:
+                    parts.append(item['text'])
+        return ''.join(parts)
+
+    return ""
 
 def merge_consecutive_messages(data, max_seconds_diff):
     print_message("Merging messages...")
@@ -81,8 +107,8 @@ def merge_consecutive_messages(data, max_seconds_diff):
                 break
 
             if 'text' in messages[j] and messages[j]['text']:
-                current_text = current_message.get('text', '')
-                next_text = messages[j]['text']
+                current_text = normalize_text(current_message.get('text', ''))
+                next_text = normalize_text(messages[j].get('text', ''))
                 
                 if isinstance(current_text, list):
                     current_text = ' '.join(str(part) for part in current_text if part)
@@ -133,7 +159,7 @@ def replace_user_names_with_numbers(data, users_mapping):
         if 'from' in message:
             user_name = message['from']
             if user_name in users_mapping:
-                message['from'] = str(users_mapping[user_name]['short_id'])
+                message['from'] = users_mapping[user_name]['short_id']
     return data
 
 def compress_json(data, replace):
@@ -175,22 +201,50 @@ def format_messages_data(data, fields):
     if 'ms' not in data:
         return data
     
-    if 'u' in data:
-        users = {}
-        for uid, val in data['u'].items():
-            if isinstance(val, dict) and 'name' in val:
-                users[uid] = val['name']
-            elif isinstance(val, list) and len(val) == 2:
-                users[uid] = val[1]
-            else:
-                users[uid] = str(val)
-        data['u'] = users
-
     formatted_msgs = []
     for msg in data['ms']:
-        row = [msg.get(fld, None) for fld in fields]
+        row = []
+        for fld in fields:
+            val = msg.get(fld, None)
+            if val is not None:
+                if fld == 'd':
+                    try:
+                        val = int(float(val))
+                    except (ValueError, TypeError):
+                        pass
+                elif fld == 'f':  # from
+                    try:
+                        val = int(val)
+                    except (ValueError, TypeError):
+                        pass
+            row.append(val)
         formatted_msgs.append(row)
+    
     data['ms'] = formatted_msgs
+    return data
 
-    data['fmt'] = fields
+def remove_empty_formatted_messages(data):
+    if 'ms' not in data:
+        return data
+
+    filtered = []
+
+    for msg in data['ms']:
+        if not isinstance(msg, list):
+            continue
+
+        if len(msg) < 3:
+            continue
+
+        text = msg[2]
+
+        if text is None:
+            continue
+
+        if isinstance(text, str) and text.strip() == "":
+            continue
+
+        filtered.append(msg)
+
+    data['ms'] = filtered
     return data

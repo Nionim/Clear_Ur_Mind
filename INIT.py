@@ -1,6 +1,7 @@
-import config, os, json
+import config, os, json, re
 from datetime import datetime
 from clean_data import replace_user_names_with_numbers
+from clean_data import remove_empty_formatted_messages
 from clean_data import merge_consecutive_messages 
 from clean_data import remove_empty_messages
 from clean_data import clean_messages
@@ -44,8 +45,7 @@ global users_list
 users_list = None
 
 def init():
-    global file
-    global final_data
+    global file, final_data
     file = get_file(working_dir)
     if not file: 
         print("Cannot found any .json files!")
@@ -53,6 +53,7 @@ def init():
     data = clear_json()
     if format_messages:
         data = format_messages_data(data, message_format)
+        data['fmt'] = message_format
     final_data = data
     save()
 
@@ -66,56 +67,93 @@ def clear_json():
     data = clean_messages(data, messages_remove)
     data = clean_root(data, remove_list)
 
-    data = remove_empty_messages(data)
+    data = remove_empty_messages(data)  # Первая фильтрация
 
     data = merge_consecutive_messages(data, compress_message_seconds)
 
     data = replace_user_names_with_numbers(data, users_list)
 
     data['users'] = users_to_field(users_list)
-
+    
+    if format_messages:
+        data = format_messages_data(data, message_format)
+        data['fmt'] = message_format
+        
+        data = remove_empty_formatted_messages(data)
     data = compress_json(data, replace=replace)
+    
     return data
 
 def build_json(data):
-    data['fmt'] = message_format
-    data['users'] = users_to_field(users_list=users_list)
-
     ordered_data = {}
     for key in ['n', 'ty', 'i', 'fmt', 'u', 'ms']:
-        if key in final_data:
-            ordered_data[key] = final_data[key]
-    for key in final_data:
+        if key in data:
+            ordered_data[key] = data[key]
+    for key in data:
         if key not in ordered_data:
-            ordered_data[key] = final_data[key]
+            ordered_data[key] = data[key]
 
-    return data
+    return ordered_data
 
 def users_to_field(users_list):
-    if not users_list: return {}
-
-    users_by_number = {}
+    if not users_list:
+        return []
+    users_array = []
     for user_name, user_info in users_list.items():
-        short_id = user_info['short_id']
-        users_by_number[str(short_id)] = [str(short_id), user_name]
-    
-    return users_by_number
+        users_array.append([user_info['short_id'], user_name])
+    users_array.sort(key=lambda x: x[0])
+    return users_array
 
 def save():
     global final_data
     base_name = os.path.splitext(os.path.basename(file))[0]
-    prefix = None
 
-    if inline_json: prefix = saved_file_inline
-    else: prefix = saved_file
+    if inline_json:
+        prefix = saved_file_inline
+    else:
+        prefix = saved_file
 
     global saved_file_x
     saved_file_x = working_dir + base_name + prefix
 
+    final_data = remove_final_empty(final_data)
+
+    final_data = build_json(final_data)
+
     with open(saved_file_x, 'w', encoding='utf-8') as f:
-        if inline_json: json.dump(final_data, f, separators=(',', ':'), ensure_ascii=False)
-        else: json.dump(final_data, f, indent='\t', ensure_ascii=False)
+        if inline_json:
+            json.dump(final_data, f, separators=(',', ':'), ensure_ascii=False)
+        else:
+            json.dump(final_data, f, indent='\t', ensure_ascii=False)
+
     print_stats()
+
+def remove_final_empty(data):
+    if 'ms' not in data:
+        return data
+
+    filtered = []
+
+    for msg in data['ms']:
+        if not isinstance(msg, list):
+            continue
+
+        if len(msg) < 3:
+            continue
+
+        text = msg[2]
+
+        if text is None:
+            continue
+
+        if isinstance(text, str):
+            if text.strip() == "":
+                continue
+
+        filtered.append(msg)
+
+    data['ms'] = filtered
+    return data
 
 def print_stats():
     original_size = os.path.getsize(file)

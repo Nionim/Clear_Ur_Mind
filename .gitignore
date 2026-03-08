@@ -12,3 +12,5 @@ dont_publish
 
 # contains
 !README.txt
+!examples/clean.json
+!examples/minded.txt
