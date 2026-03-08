@@ -1,13 +1,15 @@
 from apps import discord, telegram
+# from apps import custom_module
 
 # select platform
 # discord/telegram or custom
-platform = discord
+# platform = custom_module
+platform = telegram
 
 working_dir = "to_clean/"
 
 saved_file = "_clean.json"
-saved_file_inline = "_clean_inline.json"
+saved_file_inline = "_inline_clean.json"
 
 # If using discord - replace telegram with discord
 replace, remove_list, messages_remove = platform.get_lists();

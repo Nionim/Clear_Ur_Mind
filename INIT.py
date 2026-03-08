@@ -1,10 +1,13 @@
 import config, os, json
 from datetime import datetime
+from clean_data import replace_user_names_with_numbers
 from clean_data import merge_consecutive_messages 
 from clean_data import remove_empty_messages
 from clean_data import clean_messages
+from clean_data import compress_json
 from clean_data import extract_users
 from clean_data import clean_root
+from clean_data import format_messages_data
 
 # -==[ Configuration ]==-
 
@@ -42,13 +45,14 @@ users_list = None
 
 def init():
     global file
+    global final_data
     file = get_file(working_dir)
     if not file: 
         print("Cannot found any .json files!")
         return None
     data = clear_json()
-    data = build_json(data=data)
-    global final_data
+    if format_messages:
+        data = format_messages_data(data, message_format)
     final_data = data
     save()
 
@@ -57,19 +61,34 @@ def clear_json():
         data = json.load(f)
 
     global users_list
-    data, users_list = extract_users(data=data)
-    data = clean_messages(data=data, 
-                    fields=messages_remove)
-    data = clean_root(data=data,
-                    fields=remove_list)
-    data = remove_empty_messages(data=data)
-    data = merge_consecutive_messages(data=data,
-                    max_seconds_diff=compress_message_seconds)
+    data, users_list = extract_users(data)
+
+    data = clean_messages(data, messages_remove)
+    data = clean_root(data, remove_list)
+
+    data = remove_empty_messages(data)
+
+    data = merge_consecutive_messages(data, compress_message_seconds)
+
+    data = replace_user_names_with_numbers(data, users_list)
+
+    data['users'] = users_to_field(users_list)
+
+    data = compress_json(data, replace=replace)
     return data
 
 def build_json(data):
     data['fmt'] = message_format
     data['users'] = users_to_field(users_list=users_list)
+
+    ordered_data = {}
+    for key in ['n', 'ty', 'i', 'fmt', 'u', 'ms']:
+        if key in final_data:
+            ordered_data[key] = final_data[key]
+    for key in final_data:
+        if key not in ordered_data:
+            ordered_data[key] = final_data[key]
+
     return data
 
 def users_to_field(users_list):
@@ -83,6 +102,7 @@ def users_to_field(users_list):
     return users_by_number
 
 def save():
+    global final_data
     base_name = os.path.splitext(os.path.basename(file))[0]
     prefix = None
 
@@ -104,22 +124,26 @@ def print_stats():
 
     # Using for dev
     PLACEHOLDER = "TO REPLACE PLACEHOLDER"
-    print(f"File saved as:  {saved_file_x}")
+    print("                              ")
+    print("--=======[ Finnally ]=======--")
+    print(f"File saved as:\n{saved_file_x}")
     print(f"Total messages: {len(final_data.get('ms', []))}")
     print(f"Users:          {len(final_data.get('u', {}))}")
     print("==============================")
-    print(f"Clear size:     {new_size} B")
+    print(f"Clear size:     {new_size:,} B")
     print(f"Original size:  {original_size:,} B")
     print(f"Efficiency:     {reduction:.1f}%")
-    
+    print("                              ")
+
 def get_file(dir):
     if not os.path.exists(dir): 
         os.makedirs(dir)
         return None
     files = os.listdir(dir)
     for f in files:
-        if f.endswith(".json"):
-            return dir + f
+        if not f.endswith("_clean.json"):
+            if f.endswith(".json"):
+                return dir + f
     return None
 
 if __name__ == "__main__":

@@ -1,3 +1,14 @@
+# working dirs
 __pycache__
 to_clean
 to_replace
+
+# not used
+dont_publish
+
+# text formats
+.txt
+.json
+
+# contains
+!README.txt

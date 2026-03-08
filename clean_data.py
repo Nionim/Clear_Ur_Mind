@@ -1,6 +1,9 @@
 # TODO replace hardcoded values like 'messages' to dynamic values from conf
 # or to values from main class
 
+def print_message(string):
+    print(f"[CLEAN LOG] {string}")
+
 def check(data):
     if 'messages' not in data: return True
     messages = data['messages']
@@ -8,6 +11,7 @@ def check(data):
 
 # Remove some fields from "messages" section
 def clean_messages(data, fields):
+    print_message("Cleaning messages...")
     if check(data): return data
     
     for message in data['messages']:
@@ -17,6 +21,7 @@ def clean_messages(data, fields):
 
 # Remove some fields from root section
 def clean_root(data, fields):
+    print_message("Cleaning root...")
     for field in fields:
         if field in data: del data[field]
     return data
@@ -25,6 +30,7 @@ def clean_root(data, fields):
 # Need list for keeping fields
 # Remove messages without content
 def remove_empty_messages(data):
+    print_message("Removing empty messages...")
     if check(data): return data
     
     filtered_messages = []
@@ -47,6 +53,7 @@ def remove_empty_messages(data):
     return data
 
 def merge_consecutive_messages(data, max_seconds_diff):
+    print_message("Merging messages...")
     if check(data): return data
 
     messages = data['messages']
@@ -100,6 +107,7 @@ def merge_consecutive_messages(data, max_seconds_diff):
 
 # Extract users with uuid and names
 def extract_users(data):
+    print_message("Extract users...")
     if check(data): return data, {}
     
     users = {}
@@ -116,3 +124,73 @@ def extract_users(data):
                     "short_id": user_counter
                 }
     return data, users
+
+def replace_user_names_with_numbers(data, users_mapping):
+    print_message("Replasing usernames to ids")
+    if check(data): return data
+    
+    for message in data['messages']:
+        if 'from' in message:
+            user_name = message['from']
+            if user_name in users_mapping:
+                message['from'] = str(users_mapping[user_name]['short_id'])
+    return data
+
+def compress_json(data, replace):
+    print_message("Compressing json...")
+    def compress_dict(obj):
+        if not isinstance(obj, dict):
+            return obj
+        
+        compressed = {}
+        for key, value in obj.items():
+            new_key = replace.get(key, key)
+            
+            if isinstance(value, dict):
+                compressed[new_key] = compress_dict(value)
+            elif isinstance(value, list):
+                compressed[new_key] = compress_list(value)
+            else:
+                compressed[new_key] = value
+        return compressed
+    
+    def compress_list(lst):
+        if not isinstance(lst, list):
+            return lst
+        
+        compressed = []
+        for item in lst:
+            if isinstance(item, dict):
+                compressed.append(compress_dict(item))
+            elif isinstance(item, list):
+                compressed.append(compress_list(item))
+            else:
+                compressed.append(item)
+        
+        return compressed
+    
+    return compress_dict(data)
+
+def format_messages_data(data, fields):
+    if 'ms' not in data:
+        return data
+    
+    if 'u' in data:
+        users = {}
+        for uid, val in data['u'].items():
+            if isinstance(val, dict) and 'name' in val:
+                users[uid] = val['name']
+            elif isinstance(val, list) and len(val) == 2:
+                users[uid] = val[1]
+            else:
+                users[uid] = str(val)
+        data['u'] = users
+
+    formatted_msgs = []
+    for msg in data['ms']:
+        row = [msg.get(fld, None) for fld in fields]
+        formatted_msgs.append(row)
+    data['ms'] = formatted_msgs
+
+    data['fmt'] = fields
+    return data
