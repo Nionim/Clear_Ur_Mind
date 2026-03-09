@@ -1,3 +1,7 @@
+
+---
+
+```txt
 В последнее время мне довольно скучно, этот проект олицетворение моей скуки.
 Я захожу в публичные каналы дискорда / телеграма, экспортирую их в .json формат,
 Обрабатываю их через этот скрипт и выходной ответ прогоняю через нейронку.
@@ -31,3 +35,13 @@ email: citory.owo@gmail.com
 discord: nionim
 tg: нет тега.. Но найти как нибудь можно
 website: www.citory.net
+```
+
+---
+
+<p align="center">
+    <a href="#">
+        <img src="https://img.shields.io/github/last-commit/Nionim/Clear_Ur_Mind?display_timestamp=committer&style=flat-square&color=000000"></a>   
+    <a href="#">
+        <img src="https://img.shields.io/github/created-at/Nionim/Clear_Ur_Mind?style=flat-square&color=000000"></a>
+</p>
