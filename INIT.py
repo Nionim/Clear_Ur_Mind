@@ -159,7 +159,7 @@ def print_stats():
     original_size = os.path.getsize(file)
     new_size = os.path.getsize(saved_file_x)
     reduction = ((original_size - new_size) / original_size) * 100
-    csv_build.run_it(saved_file_x, "to_clean/output_relative.csv")
+    csv_build.run_it(saved_file_x, saved_file_x+".csv")
 
     # Using for dev
     PLACEHOLDER = "TO REPLACE PLACEHOLDER"
