@@ -404,9 +404,9 @@ def format_data(data, fields):
 def save():
     # Config
     #   Messages compress time
-    compr_sec = 240
+    compr_sec = 300
     #   Inline messages
-    in_line = False
+    in_line = True
     #   Format messages
     format_msg = True
     format_config = ["d", "f", "t"] 

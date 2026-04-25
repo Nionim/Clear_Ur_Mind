@@ -1,4 +1,4 @@
-import config, os, json, re
+import config, os, json, re, csv_build
 from datetime import datetime
 from clean_data import replace_user_names_with_numbers
 from clean_data import remove_empty_formatted_messages
@@ -159,6 +159,7 @@ def print_stats():
     original_size = os.path.getsize(file)
     new_size = os.path.getsize(saved_file_x)
     reduction = ((original_size - new_size) / original_size) * 100
+    csv_build.run_it(saved_file_x, "to_clean/output_relative.csv")
 
     # Using for dev
     PLACEHOLDER = "TO REPLACE PLACEHOLDER"
