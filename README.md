@@ -31,16 +31,22 @@
         - - clean.json
         - - minded.txt
 
+<==========================================>
 Размеры файлов (Экспорт чата с тг):
-result.json (Оригинальный файл) -> 1179 кб
+result.json (Оригинальный файл) -> 1179   кб
 
-result_clean.json               -> 187  кб
-result_inline_clean.json        -> 148  кб
-result_inline_clean.json.csv    -> 135  кб
+result_clean.json               -> 187    кб
+result_inline_clean.json        -> 148    кб
+result_inline_clean.json.csv    -> 135    кб
+<==========================================>
+Другой чат (Так же с тг):
+result.json (Оригинальный файл) -> 29 168 кб
 
+result_clean.json               -> 3261   кб
+result_inline_clean.json        -> 2593   кб
+result_inline_clean.json.csv    -> 2366   кб
+<==========================================>
 
-
-<=======================================>
 Почта для жалоб и нытья про приватность: 
 email: citory.owo@gmail.com
 discord: nionim
